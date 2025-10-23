@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'academico',
 ]
 
 MIDDLEWARE = [
@@ -74,10 +75,15 @@ WSGI_APPLICATION = 'gestion_academica.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'm7_ae3_db',  # Nombre base de datos
+        'USER': 'root',  # Tu usuario de MySQL
+        'PASSWORD': 'root',  # Tu contraseña de MySQL
+        'HOST': 'localhost',  # Host de MySQL 
+        'PORT': '3306',  # Puerto de MySQL (por defecto es 3306)
     }
 }
+
 
 
 # Password validation
