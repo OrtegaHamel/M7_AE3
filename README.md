@@ -1,27 +1,124 @@
+# EJERCICIO M7_AE3
+
+## 1. Análisis del Problema y Entidades
+Entidades y Relaciones
+
+Profesores: Tienen una relación "uno a muchos" con Cursos.
+Cursos: Tienen una relación "muchos a muchos" con Estudiantes, mediante una entidad intermedia llamada Inscripciones.
+Estudiantes: Tienen una relación "uno a uno" con Perfiles.
+
+
+## 2. Definición del Modelo de Datos en Django
+2.1. Relación Muchos a Uno: Profesor y Curso
+
+Un Profesor puede impartir varios Cursos.
+Un Curso pertenece a un solo Profesor.
+Usaremos ForeignKey con on_delete=models.CASCADE para el borrado en cascada.  
+
+2.2. Relación Muchos a Muchos con Entidad Intermedia: Estudiante y Curso
+
+Los Estudiantes pueden inscribirse en varios Cursos.
+Un Curso puede tener múltiples Estudiantes.
+La entidad intermedia Inscripcion incluye fecha_inscripcion, estado, y nota_final.  
+
+2.3. Relación Uno a Uno: Estudiante y Perfil
+
+Cada Estudiante tiene un Perfil con información adicional.
+Usaremos OneToOneField.
+
+## 3. Implementación en Django
+
+3.1 Creamos un proyecto Django y una aplicación llamada academico.
+
+3.2 Implementamos los modelos en models.py.
+
 
 ```python
-from academico.models import Profesor, Curso, Estudiante, Inscripcion, Perfil
+from django.db import models
 
-# Crear profesores
-profesor1 = Profesor.objects.create(nombre="Juan Pérez", email="juan@example.com")
-profesor2 = Profesor.objects.create(nombre="Ana Gómez", email="ana@example.com")
+# Relación Muchos a Uno: Profesor y Curso 
+# Un Profesor puede impartir varios Cursos.
+# Un Curso pertenece a un solo Profesor.
 
-# Crear cursos
-curso1 = Curso.objects.create(id_profesor=profesor1, nombre="Matemáticas", descripcion="Curso de matemáticas básicas.")
-curso2 = Curso.objects.create(id_profesor=profesor1, nombre="Física", descripcion="Curso de física clásica.")
-curso3 = Curso.objects.create(id_profesor=profesor2, nombre="Literatura", descripcion="Curso de literatura moderna.")
+class Profesor(models.Model):
+    id = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
 
-# Crear estudiantes
-estudiante1 = Estudiante.objects.create(nombre="Carlos Ruiz", email="carlos@example.com")
-estudiante2 = Estudiante.objects.create(nombre="María López", email="maria@example.com")
+    def __str__(self):
+        return self.nombre
 
-# Inscribir estudiantes en cursos
-Inscripcion.objects.create(id_estudiante=estudiante1, id_curso=curso1, estado="Activo")
-Inscripcion.objects.create(id_estudiante=estudiante1, id_curso=curso2, estado="Activo", nota_final=8.5)
-Inscripcion.objects.create(id_estudiante=estudiante2, id_curso=curso3, estado="Finalizado", nota_final=9.0)
+class Curso(models.Model):
+    id = models.AutoField(primary_key=True)
+    id_profesor = models.ForeignKey(Profesor, on_delete=models.CASCADE) # Borrado en cascada
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField()
 
-# Crear perfiles
-Perfil.objects.create(id_estudiante=estudiante1, biografia="Apasionado por las ciencias.", foto="perfiles/carlos.jpg", redes="https://example.com/carlos")
-Perfil.objects.create(id_estudiante=estudiante2, biografia="Amante de la lectura.", redes="https://example.com/maria")
+    def __str__(self):
+        return self.nombre
+    
+# Relación Muchos a Muchos: Estudiante y Curso
+# Un Estudiante puede estar inscrito en varios Cursos.
+# Un Curso puede estar inscrito por varios Estudiantes.
+
+class Estudiante(models.Model):
+    id = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=100)
+    email = models.EmailField(unique=True)
+
+    def __str__(self):
+        return self.nombre
+
+# Entidad Intermedia para la relación Muchos a Muchos
+class Inscripcion(models.Model):
+    ESTADO_CHOICES = [
+        ('Activo', 'Activo'),
+        ('Finalizado', 'Finalizado'),
+    ]
+    id_estudiante = models.ForeignKey(Estudiante, on_delete=models.CASCADE)
+    id_curso = models.ForeignKey(Curso, on_delete=models.CASCADE)
+    fecha_inscripcion = models.DateField(auto_now_add=True)
+    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='Activo')
+    nota_final = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.id_estudiante} - {self.id_curso}"
+
+# Relación Uno a Uno: Estudiante y Perfil
+# Un Estudiante tiene un solo Perfil.
+# Un Perfil pertenece a un solo Estudiante.
+
+class Perfil(models.Model):
+    id_estudiante = models.OneToOneField(Estudiante, on_delete=models.CASCADE) # implementación con OneToOneField
+    biografia = models.TextField(blank=True)
+    foto = models.ImageField(upload_to='perfiles/', blank=True, null=True)
+    redes = models.URLField(blank=True)
+
+    def __str__(self):
+        return f"Perfil de {self.id_estudiante}"
 
 ```
+
+3.3 Generamos y aplicamos las migraciones (makemigrations y migrate).
+
+``` bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+## 4. Validación de Relaciones en la Consola de Django
+4.1 Creamos Datos Iniciales
+
+![Datos iniciales](./images/AE3_1.png)
+
+4.2 Modificamos estados de inscripciones y agregamos notas finales.
+
+![Modificación](./images/AE3_2.png)
+
+4.3 Borramos un profesor y sus cursos asociados.
+
+![Borrado](./images/AE3_3.png)
+
+4.4 Comprobamos que el borrado en cascada funciona correctamente.
+
+![Comprobación](./images/AE3_4.png)
